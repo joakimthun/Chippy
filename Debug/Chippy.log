@@ -1,0 +1,5 @@
+﻿  chippy.c
+  chip8.c
+  Generating Code...
+c:\dev\chippy\src\chip8.c(218): warning C4715: 'createChip' : not all control paths return a value
+  Chippy.vcxproj -> C:\Dev\Chippy\Debug\Chippy.exe
