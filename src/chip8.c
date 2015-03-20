@@ -210,14 +210,130 @@ void X_D(Chip8* chip)
 
 void X_E(Chip8* chip)
 {
-	printf("Unsupported opcode: 0x%X\n", chip->opcode);
-	chip->program_counter += 2;
+	switch (chip->opcode & 0x00FF)
+	{
+		case 0x009E: { // EX9E: Skips the next instruction if the key stored in VX is pressed
+			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+			unsigned char register_value = chip->V[register_index];
+			if (chip->key_state[register_value] != 0)
+				chip->program_counter += 4;
+			else
+				chip->program_counter += 2;
+			break;
+		}
+		case 0x00A1: { // EXA1: Skips the next instruction if the key stored in VX isn't pressed
+			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+			unsigned char register_value = chip->V[register_index];
+			if (chip->key_state[register_value] == 0)
+				chip->program_counter += 4;
+			else
+				chip->program_counter += 2;
+			break;
+		}
+		default:
+			printf("Unsupported opcode: 0x%X\n", chip->opcode);
+	}
 }
 
 void X_F(Chip8* chip)
 {
-	printf("Unsupported opcode: 0x%X\n", chip->opcode);
-	chip->program_counter += 2;
+	switch (chip->opcode & 0x00FF)
+	{
+		case 0x0007: { // FX07: Sets VX to the value of the delay timer
+			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+			chip->V[register_index] = chip->delay_timer;
+			chip->program_counter += 2;
+			break;
+		}
+		case 0x000A: { // FX0A: A key press is awaited, and then stored in VX		
+			unsigned char key_was_pressed = 0;
+			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+
+			while (1)
+			{
+				for (unsigned char i = 0; i < 16; i++)
+				{
+					if (chip->key_state[i] != 0)
+					{
+						chip->V[register_index] = i;
+						key_was_pressed = 1;
+					}
+				}
+
+				if (key_was_pressed != 0)
+					break;
+			}
+			
+			chip->program_counter += 2;
+			break;
+		}
+		case 0x0015: { // FX15: Sets the delay timer to VX
+			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+			chip->delay_timer = chip->V[register_index];
+			chip->program_counter += 2;
+			break;
+		}
+		case 0x0018: { // FX18: Sets the sound timer to VX
+			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+			chip->sound_timer = chip->V[register_index];
+			chip->program_counter += 2;
+			break;
+		}
+		case 0x001E: { // FX1E: Adds VX to I
+			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+			// VF is set to 1 when range overflow(I + VX > 0xFFF), and 0 when there isn't.
+			// This is undocumented feature of the CHIP-8 and used by Spacefight 2091! game.
+			if (chip->I + chip->V[register_index] > 0xFFF)	
+				chip->V[0xF] = 1;
+			else
+				chip->V[0xF] = 0;
+
+			chip->I += chip->V[register_index];
+			chip->program_counter += 2;
+			break;
+		}
+		case 0x0029: { // FX29: Sets I to the location of the sprite for the character in VX. Characters 0-F (in hexadecimal) are represented by a 4x5 font
+			printf("Unsupported opcode: 0x%X\n", chip->opcode);
+			chip->program_counter += 2;
+			break;
+		}
+		case 0x0033: { // FX33: Stores the Binary-coded decimal representation of VX at the addresses I, I plus 1, and I plus 2
+			// Credit: http://www.multigesture.net/wp-content/uploads/mirror/goldroad/chip8.shtml
+			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+
+			chip->memory[chip->I] = chip->V[register_index] / 100;
+			chip->memory[chip->I + 1] = (chip->V[register_index] / 10) % 10;
+			chip->memory[chip->I + 2] = (chip->V[register_index] % 100) % 10;
+			chip->program_counter += 2;
+			break;
+		}
+		case 0x0055: { // FX55: Stores V0 to VX in memory starting at address I					
+			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+			for (unsigned char i = 0; i <= register_index; i++)
+				chip->memory[chip->I + i] = chip->V[i];
+
+			// On the original interpreter, when the operation is done, I = I + X + 1. On current implementations, I is left unchanged.
+			// Include this?
+			//chip->I += register_index + 1;
+
+			chip->program_counter += 2;
+			break;
+		}
+		case 0x0065: { // FX65: Fills V0 to VX with values from memory starting at address I
+			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+			for (unsigned char i = 0; i <= register_index; i++)
+				chip->V[i] = chip->memory[chip->I + i];
+
+			// On the original interpreter, when the operation is done, I = I + X + 1. On current implementations, I is left unchanged.
+			// Include this?
+			//chip->I += register_index + 1;
+
+			chip->program_counter += 2;
+			break;
+		}
+		default:
+			printf("Unsupported opcode: 0x%X\n", chip->opcode);
+	}
 }
 
 void fetchOpcode(Chip8* chip)

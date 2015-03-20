@@ -1,5 +1,0 @@
-﻿  chippy.c
-  chip8.c
-c:\dev\chippy\src\chip8.c(195): warning C4244: 'function' : conversion from 'time_t' to 'unsigned int', possible loss of data
-  Generating Code...
-  Chippy.vcxproj -> C:\Dev\Chippy\Debug\Chippy.exe
