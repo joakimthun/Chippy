@@ -62,6 +62,18 @@ void emulate(Chip8* chip)
 
 	unsigned char index = (chip->opcode & 0xF000) >> 12;
 	opcode_handlers[index](chip);
+
+	// Update the sound and delay timer
+	if (chip->sound_timer > 0)
+	{
+		if (chip->sound_timer == 1)
+			// Play a sound
+
+		chip->sound_timer--;
+	}
+
+	if (chip->delay_timer > 0)
+		chip->delay_timer--;
 }
 
 void X_0(Chip8* chip)
@@ -157,8 +169,107 @@ void X_7(Chip8* chip)
 
 void X_8(Chip8* chip)
 {
-	printf("Unsupported opcode: 0x%X\n", chip->opcode);
-	chip->program_counter += 2;
+	switch (chip->opcode & 0x000F)
+	{
+		case 0x0000: { // 0x8XY0: Sets VX to the value of VY
+			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
+			unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
+
+			chip->V[register_index_x] = chip->V[register_index_y];
+
+			chip->program_counter += 2;
+			break;
+		}
+		case 0x0001: { // 0x8XY1: Sets VX to "VX OR VY"
+			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
+			unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
+
+			chip->V[register_index_x] |= chip->V[register_index_y];
+
+			chip->program_counter += 2;
+			break;
+		}
+		case 0x0002: { // 0x8XY2: Sets VX to "VX AND VY"
+			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
+			unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
+
+			chip->V[register_index_x] &= chip->V[register_index_y];
+
+			chip->program_counter += 2;
+			break;
+		}
+		case 0x0003: { // 0x8XY3: Sets VX to "VX XOR VY"
+			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
+			unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
+
+			chip->V[register_index_x] ^= chip->V[register_index_y];
+
+			chip->program_counter += 2;
+			break;
+		}
+		case 0x0004: { // 0x8XY4: Adds VY to VX. VF is set to 1 when there's a carry, and to 0 when there isn't
+			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
+			unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
+
+			if (chip->V[register_index_y] > (0xFF - chip->V[register_index_x]))
+				chip->V[0xF] = 1; // There is a carry
+			else
+				chip->V[0xF] = 0;
+
+			chip->V[register_index_x] += chip->V[register_index_y];
+
+			chip->program_counter += 2;
+			break;
+		}
+		case 0x0005: { // 0x8XY5: VY is subtracted from VX. VF is set to 0 when there's a borrow, and 1 when there isn't
+			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
+			unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
+
+			if (chip->V[register_index_y] > chip->V[register_index_x])
+				chip->V[0xF] = 0; // There is a borrow
+			else
+				chip->V[0xF] = 1;
+
+			chip->V[register_index_x] -= chip->V[register_index_y];
+
+			chip->program_counter += 2;
+			break;
+		}
+		case 0x0006: { // 0x8XY6: Shifts VX right by one. VF is set to the value of the least significant bit of VX before the shift
+			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
+
+			chip->V[0xF] = chip->V[register_index_x] & 0x1;
+			chip->V[register_index_x] >>= 1;
+
+			chip->program_counter += 2;
+			break;
+		}
+		case 0x0007: { // 0x8XY7: Sets VX to VY minus VX. VF is set to 0 when there's a borrow, and 1 when there isn't
+			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
+			unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
+
+			if (chip->V[register_index_x] > chip->V[register_index_y])
+				chip->V[0xF] = 0; // There is a borrow
+			else
+				chip->V[0xF] = 1;
+
+			chip->V[register_index_x] = chip->V[register_index_y] - chip->V[register_index_x];
+
+			chip->program_counter += 2;
+			break;
+		}
+		case 0x000E: { // 0x8XYE: Shifts VX left by one. VF is set to the value of the most significant bit of VX before the shift
+			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
+
+			chip->V[0xF] = chip->V[register_index_x] >> 7;
+			chip->V[register_index_x] <<= 1;
+
+			chip->program_counter += 2;
+			break;
+		}
+		default:
+			printf("Unsupported opcode: 0x%X\n", chip->opcode);
+	}
 }
 
 void X_9(Chip8* chip)
@@ -204,7 +315,39 @@ void X_C(Chip8* chip)
 
 void X_D(Chip8* chip)
 {
-	printf("Unsupported opcode: 0x%X\n", chip->opcode);
+	// DXYN: Draws a sprite at coordinate (VX, VY) that has a width of 8 pixels and a height of N pixels. 
+	// Each row of 8 pixels is read as bit-coded starting from memory location I; 
+	// I value doesn't change after the execution of this instruction. 
+	// VF is set to 1 if any screen pixels are flipped from set to unset when the sprite is drawn, 
+	// and to 0 if that doesn't happen
+
+	// Credit: http://www.multigesture.net/wp-content/uploads/mirror/goldroad/chip8.shtml
+
+	unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
+	unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
+	unsigned short x = chip->V[register_index_x];
+	unsigned short y = chip->V[register_index_y];
+	unsigned short height = chip->opcode & 0x000F;
+	unsigned short pixel;
+
+	chip->V[0xF] = 0;
+	for (int yline = 0; yline < height; yline++)
+	{
+		pixel = chip->memory[chip->I + yline];
+		for (int xline = 0; xline < 8; xline++)
+		{
+			if ((pixel & (0x80 >> xline)) != 0)
+			{
+				if (chip->display_buffer[(x + xline + ((y + yline) * 64))] == 1)
+				{
+					chip->V[0xF] = 1;
+				}
+				chip->display_buffer[x + xline + ((y + yline) * 64)] ^= 1;
+			}
+		}
+	}
+
+	chip->redraw = 1;
 	chip->program_counter += 2;
 }
 
@@ -293,7 +436,8 @@ void X_F(Chip8* chip)
 			break;
 		}
 		case 0x0029: { // FX29: Sets I to the location of the sprite for the character in VX. Characters 0-F (in hexadecimal) are represented by a 4x5 font
-			printf("Unsupported opcode: 0x%X\n", chip->opcode);
+			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+			chip->I = chip->V[register_index] * 5;
 			chip->program_counter += 2;
 			break;
 		}
