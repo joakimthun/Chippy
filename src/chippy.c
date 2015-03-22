@@ -5,54 +5,76 @@
 #include "chip8.h"
 
 // Function prototypes
-int initializeSDL(int screen_width, int screen_height);
-void destroySDL();
-void renderDisplayBuffer(Chip8* chip);
-void putPixel(int x, int y, Uint32 pixel);
+int initialize_sdl(int screen_width, int screen_height);
+void destroy_sdl();
+void render(Chip8* chip);
+void put_pixel(int x, int y, Uint32 pixel);
 
 SDL_Window* window = NULL;
 SDL_Surface* window_surface = NULL;
 SDL_Surface* render_surface = NULL;
+int resolution_scale = 10;
 
-int main(int argc, char* args[])
+int main(int argc, char* argv[])
 {
-	if (initializeSDL(640, 320) > 0)
+	if (initialize_sdl(64 * resolution_scale, 32 * resolution_scale) > 0)
 	{
 		return 1;
 	}
 
-	char* file = "roms//pong2.c8";
+	char* rom_name = argv[1];
 
-	Chip8* chip = createChip();
+	Chip8* chip = create_chip();
 	if (chip == NULL)
 	{
 		return 1;
 	}
 
-	if (loadROM(chip, file) != 0)
+	if (load_rom(chip, rom_name) != 0)
 	{
 		return 1;
 	}
 
-	while (1) 
+	SDL_Event e;
+	Uint8 running = 1;
+
+	while (running > 0)
 	{
+		// Handle the events in the event queue
+		while (SDL_PollEvent(&e) != 0)
+		{
+			if (e.type == SDL_QUIT)
+			{
+				running = 0;
+			}
+
+			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)
+			{
+				running = 0;
+			}
+
+			handle_event(e, chip);
+		}
+
 		emulate(chip);
+
 		if (chip->redraw > 0)
 		{
-			renderDisplayBuffer(chip);
+			render(chip);
 			SDL_UpdateWindowSurface(window);
 		}
 
 		// Add something that slows this down
+		//SDL_Delay(10);
 	}
 
-	destroyChip(chip);
-	destroySDL();
+	destroy_chip(chip);
+	destroy_sdl();
 	
 	return 0;
 }
 
-void renderDisplayBuffer(Chip8* chip)
+void render(Chip8* chip)
 {
 	for (int i = 0; i < 2048; i++)
 	{
@@ -66,18 +88,18 @@ void renderDisplayBuffer(Chip8* chip)
 		int y = floor(i / 64);
 
 		// x, y , w, h
-		SDL_Rect fillRect = { x * 10, y * 10, 10, 10 };
+		SDL_Rect fillRect = { x * resolution_scale, y * resolution_scale, 10, 10 };
 		SDL_FillRect(window_surface, &fillRect, color);
 	}
 }
 
-void putPixel(int x, int y, Uint32 pixel_value)
+void put_pixel(int x, int y, Uint32 pixel_value)
 {
 	Uint32 *pixels = (Uint32*)window_surface->pixels;
 	pixels[(y * window_surface->w) + x] = pixel_value;
 }
 
-int initializeSDL(int screen_width, int screen_height)
+int initialize_sdl(int screen_width, int screen_height)
 {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
@@ -103,7 +125,7 @@ int initializeSDL(int screen_width, int screen_height)
 	return 0;
 }
 
-void destroySDL()
+void destroy_sdl()
 {
 	SDL_DestroyWindow(window);
 	SDL_Quit();

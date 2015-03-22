@@ -1,6 +1,8 @@
 #ifndef CHIP8_H
 #define CHIP8_H
 
+#include <SDL.h>
+
 typedef struct {
 	unsigned char display_buffer[64 * 32];	// W * H, 2048 pixels
 	unsigned char key_state[16];			// 16 keys which range from 0 to F
@@ -20,9 +22,10 @@ typedef struct {
 
 } Chip8;					
 
-Chip8* createChip();
-void destroyChip(Chip8* chip);
-int loadROM(Chip8* chip, const char* filename);
+Chip8* create_chip();
+void destroy_chip(Chip8* chip);
+int load_rom(Chip8* chip, const char* filename);
 void emulate(Chip8* chip);
+void handle_event(SDL_Event e, Chip8* chip);
 
 #endif

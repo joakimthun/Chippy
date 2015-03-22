@@ -5,23 +5,23 @@
 #include <time.h>
 
 // Function prototypes
-void fetchOpcode(Chip8*);
-void X_0(Chip8*);
-void X_1(Chip8*);
-void X_2(Chip8*);
-void X_3(Chip8*);
-void X_4(Chip8*);
-void X_5(Chip8*);
-void X_6(Chip8*);
-void X_7(Chip8*);
-void X_8(Chip8*);
-void X_9(Chip8*);
-void X_A(Chip8*);
-void X_B(Chip8*);
-void X_C(Chip8*);
-void X_D(Chip8*);
-void X_E(Chip8*);
-void X_F(Chip8*);
+void fetch_opcode(Chip8*);
+void x_0(Chip8*);
+void x_1(Chip8*);
+void x_2(Chip8*);
+void x_3(Chip8*);
+void x_4(Chip8*);
+void x_5(Chip8*);
+void x_6(Chip8*);
+void x_7(Chip8*);
+void x_8(Chip8*);
+void x_9(Chip8*);
+void x_a(Chip8*);
+void x_b(Chip8*);
+void x_c(Chip8*);
+void x_d(Chip8*);
+void x_e(Chip8*);
+void x_f(Chip8*);
 
 unsigned char fontset[80] =
 {
@@ -45,13 +45,13 @@ unsigned char fontset[80] =
 
 void (*opcode_handlers[16])(Chip8*) = 
 { 
-	X_0, X_1, X_2, X_3, X_4, X_5, X_6, X_7,
-	X_8, X_9, X_A, X_B, X_C, X_D, X_E, X_F
+	x_0, x_1, x_2, x_3, x_4, x_5, x_6, x_7,
+	x_8, x_9, x_a, x_b, x_c, x_d, x_e, x_f
 };
 
 void emulate(Chip8* chip)
 {
-	fetchOpcode(chip);
+	fetch_opcode(chip);
 	
 	/*
 	Example:
@@ -76,7 +76,7 @@ void emulate(Chip8* chip)
 		chip->delay_timer--;
 }
 
-void X_0(Chip8* chip)
+void x_0(Chip8* chip)
 {
 	switch (chip->opcode & 0x000F)
 	{
@@ -101,14 +101,14 @@ void X_0(Chip8* chip)
 	}
 }
 
-void X_1(Chip8* chip)
+void x_1(Chip8* chip)
 {
 	// 0x1NNN: Jumps to address NNN
 	// We don't need to increment the program counter here since where jumping to a specified address
 	chip->program_counter = chip->opcode & 0x0FFF;
 }
 
-void X_2(Chip8* chip)
+void x_2(Chip8* chip)
 {
 	// 0x2NNN: Calls subroutine at NNN
 	chip->stack[chip->stack_pointer] = chip->program_counter;	// Pu the current address on the stack
@@ -116,7 +116,7 @@ void X_2(Chip8* chip)
 	chip->program_counter = chip->opcode & 0x0FFF;				// Set the program counter to the address at NNN
 }
 
-void X_3(Chip8* chip)
+void x_3(Chip8* chip)
 {
 	// 0x3XNN: Skips the next instruction if VX equals NN
 	unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
@@ -127,7 +127,7 @@ void X_3(Chip8* chip)
 		chip->program_counter += 2;
 }
 
-void X_4(Chip8* chip)
+void x_4(Chip8* chip)
 {
 	// 0x4XNN: Skips the next instruction if VX doesn't equal NN
 	unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
@@ -138,7 +138,7 @@ void X_4(Chip8* chip)
 		chip->program_counter += 2;
 }
 
-void X_5(Chip8* chip)
+void x_5(Chip8* chip)
 {
 	// 0x5XY0: Skips the next instruction if VX equals VY
 	unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
@@ -149,7 +149,7 @@ void X_5(Chip8* chip)
 		chip->program_counter += 2;
 }
 
-void X_6(Chip8* chip)
+void x_6(Chip8* chip)
 {
 	// 0x6XNN: Sets VX to NN
 	unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
@@ -158,7 +158,7 @@ void X_6(Chip8* chip)
 	chip->program_counter += 2;
 }
 
-void X_7(Chip8* chip)
+void x_7(Chip8* chip)
 {
 	// 0x7XNN: Adds NN to VX
 	unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
@@ -167,7 +167,7 @@ void X_7(Chip8* chip)
 	chip->program_counter += 2;
 }
 
-void X_8(Chip8* chip)
+void x_8(Chip8* chip)
 {
 	switch (chip->opcode & 0x000F)
 	{
@@ -272,7 +272,7 @@ void X_8(Chip8* chip)
 	}
 }
 
-void X_9(Chip8* chip)
+void x_9(Chip8* chip)
 {
 	// 0x9XY0: Skips the next instruction if VX doesn't equal VY
 	unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
@@ -283,7 +283,7 @@ void X_9(Chip8* chip)
 		chip->program_counter += 2;
 }
 
-void X_A(Chip8* chip)
+void x_a(Chip8* chip)
 {
 	// ANNN: Sets I to the address NNN
 	unsigned short nnn = chip->opcode & 0x0FFF;
@@ -291,7 +291,7 @@ void X_A(Chip8* chip)
 	chip->program_counter += 2;
 }
 
-void X_B(Chip8* chip)
+void x_b(Chip8* chip)
 {
 	// BNNN: Jumps to the address NNN plus V0
 	// We don't need to increment the program counter here since where jumping to a specified address
@@ -299,7 +299,7 @@ void X_B(Chip8* chip)
 	chip->program_counter = nnn + chip->V[0];
 }
 
-void X_C(Chip8* chip)
+void x_c(Chip8* chip)
 {
 	// CXNN: Sets VX to a random number, masked/"anded" by NN
 	// Seed the rand() function
@@ -313,7 +313,7 @@ void X_C(Chip8* chip)
 	chip->program_counter += 2;
 }
 
-void X_D(Chip8* chip)
+void x_d(Chip8* chip)
 {
 	// DXYN: Draws a sprite at coordinate (VX, VY) that has a width of 8 pixels and a height of N pixels. 
 	// Each row of 8 pixels is read as bit-coded starting from memory location I; 
@@ -351,7 +351,7 @@ void X_D(Chip8* chip)
 	chip->program_counter += 2;
 }
 
-void X_E(Chip8* chip)
+void x_e(Chip8* chip)
 {
 	switch (chip->opcode & 0x00FF)
 	{
@@ -378,7 +378,7 @@ void X_E(Chip8* chip)
 	}
 }
 
-void X_F(Chip8* chip)
+void x_f(Chip8* chip)
 {
 	switch (chip->opcode & 0x00FF)
 	{
@@ -480,14 +480,14 @@ void X_F(Chip8* chip)
 	}
 }
 
-void fetchOpcode(Chip8* chip)
+void fetch_opcode(Chip8* chip)
 {
 	// Each opcode is 2 bytes long so we need to grab them from the memory byte by byte and then merge them together
 	chip->opcode = chip->memory[chip->program_counter] << 8 | chip->memory[chip->program_counter + 1];
 	printf("Opcode: 0x%X\n", chip->opcode);
 }
 
-Chip8* createChip()
+Chip8* create_chip()
 {
 	Chip8* chip = malloc(sizeof(Chip8));
 	if (chip == NULL)
@@ -525,12 +525,131 @@ Chip8* createChip()
 	return chip;
 }
 
-void destroyChip(Chip8* chip)
+void destroy_chip(Chip8* chip)
 {
 	free(chip);
 }
 
-int loadROM(Chip8* chip, const char* filename)
+void handle_event(SDL_Event e, Chip8* chip)
+{
+	// A key was pushed
+	if (e.type == SDL_KEYDOWN && e.key.repeat == 0)
+	{
+		switch (e.key.keysym.sym)
+		{
+			case SDLK_1:
+				chip->key_state[0] = 1;
+				break;
+			case SDLK_2:
+				chip->key_state[1] = 1;
+				break;
+			case SDLK_3:
+				chip->key_state[2] = 1;
+				break;
+			case SDLK_4:
+				chip->key_state[3] = 1;
+				break;
+			case SDLK_5:
+				chip->key_state[4] = 1;
+				break;
+			case SDLK_6:
+				chip->key_state[5] = 1;
+				break;
+			case SDLK_7:
+				chip->key_state[6] = 1;
+				break;
+			case SDLK_8:
+				chip->key_state[7] = 1;
+				break;
+			case SDLK_q:
+				chip->key_state[8] = 1;
+				break;
+			case SDLK_w:
+				chip->key_state[9] = 1;
+				break;
+			case SDLK_e:
+				chip->key_state[10] = 1;
+				break;
+			case SDLK_r:
+				chip->key_state[11] = 1;
+				break;
+			case SDLK_s:
+				chip->key_state[12] = 1;
+				break;
+			case SDLK_t:
+				chip->key_state[13] = 1;
+				break;
+			case SDLK_u:
+				chip->key_state[14] = 1;
+				break;
+			case SDLK_y:
+				chip->key_state[15] = 1;
+				break;
+			default:
+				break;
+		}
+	}
+
+	// A key was released
+	else if (e.type == SDL_KEYUP && e.key.repeat == 0)
+	{
+		switch (e.key.keysym.sym)
+		{
+			case SDLK_1:
+				chip->key_state[0] = 0;
+				break;
+			case SDLK_2:
+				chip->key_state[1] = 0;
+				break;
+			case SDLK_3:
+				chip->key_state[2] = 0;
+				break;
+			case SDLK_4:
+				chip->key_state[3] = 0;
+				break;
+			case SDLK_5:
+				chip->key_state[4] = 0;
+				break;
+			case SDLK_6:
+				chip->key_state[5] = 0;
+				break;
+			case SDLK_7:
+				chip->key_state[6] = 0;
+				break;
+			case SDLK_8:
+				chip->key_state[7] = 0;
+				break;
+			case SDLK_q:
+				chip->key_state[8] = 0;
+				break;
+			case SDLK_w:
+				chip->key_state[9] = 0;
+				break;
+			case SDLK_e:
+				chip->key_state[10] = 0;
+				break;
+			case SDLK_r:
+				chip->key_state[11] = 0;
+				break;
+			case SDLK_s:
+				chip->key_state[12] = 0;
+				break;
+			case SDLK_t:
+				chip->key_state[13] = 0;
+				break;
+			case SDLK_u:
+				chip->key_state[14] = 0;
+				break;
+			case SDLK_y:
+				chip->key_state[15] = 0;
+				break;
+			default:
+				break;
+		}
+	}
+}
+
+int load_rom(Chip8* chip, const char* filename)
 {
 	FILE* pFile = fopen(filename, "rb");
 	if (pFile == NULL)
