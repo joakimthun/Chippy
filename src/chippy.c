@@ -1,5 +1,6 @@
 #include <SDL.h>
 #include <stdio.h>
+#include <Windows.h>
 #include <math.h>
 
 #include "chip8.h"
@@ -65,7 +66,6 @@ int main(int argc, char* argv[])
 		}
 
 		// Add something that slows this down
-		//SDL_Delay(10);
 	}
 
 	destroy_chip(chip);

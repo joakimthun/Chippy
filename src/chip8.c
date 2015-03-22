@@ -6,6 +6,8 @@
 
 // Function prototypes
 void fetch_opcode(Chip8*);
+void next_opcode(Chip8* chip);
+void skip_next_opcode(Chip8* chip);
 void x_0(Chip8*);
 void x_1(Chip8*);
 void x_2(Chip8*);
@@ -23,7 +25,7 @@ void x_d(Chip8*);
 void x_e(Chip8*);
 void x_f(Chip8*);
 
-unsigned char fontset[80] =
+Uint8 fontset[80] =
 {
 	0xF0, 0x90, 0x90, 0x90, 0xF0, //0
 	0x20, 0x60, 0x20, 0x20, 0x70, //1
@@ -60,7 +62,7 @@ void emulate(Chip8* chip)
 		Invoke the function at index 15 in the handler array
 	*/
 
-	unsigned char index = (chip->opcode & 0xF000) >> 12;
+	Uint8 index = (chip->opcode & 0xF000) >> 12;
 	opcode_handlers[index](chip);
 
 	// Update the sound and delay timer
@@ -84,7 +86,8 @@ void x_0(Chip8* chip)
 			for (int i = 0; i < 2048; i++)
 				chip->display_buffer[i] = 0x0;
 			chip->redraw = 1;
-			chip->program_counter += 2;
+			//next_opcode(chip);
+			next_opcode(chip);
 			break;
 
 		case 0x000E: // 0x00EE: Returns from subroutine
@@ -93,7 +96,7 @@ void x_0(Chip8* chip)
 
 			chip->stack_pointer--;
 			chip->program_counter = chip->stack[chip->stack_pointer];	// Set the address on the stack as the program counter					
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 
 		default:
@@ -119,52 +122,52 @@ void x_2(Chip8* chip)
 void x_3(Chip8* chip)
 {
 	// 0x3XNN: Skips the next instruction if VX equals NN
-	unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
-	unsigned char nn = (chip->opcode & 0x00FF);
+	Uint8 register_index = (chip->opcode & 0x0F00) >> 8;
+	Uint8 nn = (chip->opcode & 0x00FF);
 	if (chip->V[register_index] == nn)
-		chip->program_counter += 4;
+		skip_next_opcode(chip);
 	else
-		chip->program_counter += 2;
+		next_opcode(chip);
 }
 
 void x_4(Chip8* chip)
 {
 	// 0x4XNN: Skips the next instruction if VX doesn't equal NN
-	unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
-	unsigned char nn = (chip->opcode & 0x00FF);
+	Uint8 register_index = (chip->opcode & 0x0F00) >> 8;
+	Uint8 nn = (chip->opcode & 0x00FF);
 	if (chip->V[register_index] != nn)
-		chip->program_counter += 4;
+		skip_next_opcode(chip);
 	else
-		chip->program_counter += 2;
+		next_opcode(chip);
 }
 
 void x_5(Chip8* chip)
 {
 	// 0x5XY0: Skips the next instruction if VX equals VY
-	unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
-	unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
+	Uint8 register_index_x = (chip->opcode & 0x0F00) >> 8;
+	Uint8 register_index_y = (chip->opcode & 0x00F0) >> 4;
 	if (chip->V[register_index_x] == chip->V[register_index_y])
-		chip->program_counter += 4;
+		skip_next_opcode(chip);
 	else
-		chip->program_counter += 2;
+		next_opcode(chip);
 }
 
 void x_6(Chip8* chip)
 {
 	// 0x6XNN: Sets VX to NN
-	unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
-	unsigned char nn = chip->opcode & 0x00FF;
+	Uint8 register_index = (chip->opcode & 0x0F00) >> 8;
+	Uint8 nn = chip->opcode & 0x00FF;
 	chip->V[register_index] = nn;
-	chip->program_counter += 2;
+	next_opcode(chip);
 }
 
 void x_7(Chip8* chip)
 {
 	// 0x7XNN: Adds NN to VX
-	unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
-	unsigned char nn = chip->opcode & 0x00FF;
+	Uint8 register_index = (chip->opcode & 0x0F00) >> 8;
+	Uint8 nn = chip->opcode & 0x00FF;
 	chip->V[register_index] += nn;
-	chip->program_counter += 2;
+	next_opcode(chip);
 }
 
 void x_8(Chip8* chip)
@@ -172,44 +175,44 @@ void x_8(Chip8* chip)
 	switch (chip->opcode & 0x000F)
 	{
 		case 0x0000: { // 0x8XY0: Sets VX to the value of VY
-			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
-			unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
+			Uint8 register_index_x = (chip->opcode & 0x0F00) >> 8;
+			Uint8 register_index_y = (chip->opcode & 0x00F0) >> 4;
 
 			chip->V[register_index_x] = chip->V[register_index_y];
 
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		case 0x0001: { // 0x8XY1: Sets VX to "VX OR VY"
-			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
-			unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
+			Uint8 register_index_x = (chip->opcode & 0x0F00) >> 8;
+			Uint8 register_index_y = (chip->opcode & 0x00F0) >> 4;
 
 			chip->V[register_index_x] |= chip->V[register_index_y];
 
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		case 0x0002: { // 0x8XY2: Sets VX to "VX AND VY"
-			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
-			unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
+			Uint8 register_index_x = (chip->opcode & 0x0F00) >> 8;
+			Uint8 register_index_y = (chip->opcode & 0x00F0) >> 4;
 
 			chip->V[register_index_x] &= chip->V[register_index_y];
 
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		case 0x0003: { // 0x8XY3: Sets VX to "VX XOR VY"
-			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
-			unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
+			Uint8 register_index_x = (chip->opcode & 0x0F00) >> 8;
+			Uint8 register_index_y = (chip->opcode & 0x00F0) >> 4;
 
 			chip->V[register_index_x] ^= chip->V[register_index_y];
 
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		case 0x0004: { // 0x8XY4: Adds VY to VX. VF is set to 1 when there's a carry, and to 0 when there isn't
-			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
-			unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
+			Uint8 register_index_x = (chip->opcode & 0x0F00) >> 8;
+			Uint8 register_index_y = (chip->opcode & 0x00F0) >> 4;
 
 			if (chip->V[register_index_y] > (0xFF - chip->V[register_index_x]))
 				chip->V[0xF] = 1; // There is a carry
@@ -218,12 +221,12 @@ void x_8(Chip8* chip)
 
 			chip->V[register_index_x] += chip->V[register_index_y];
 
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		case 0x0005: { // 0x8XY5: VY is subtracted from VX. VF is set to 0 when there's a borrow, and 1 when there isn't
-			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
-			unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
+			Uint8 register_index_x = (chip->opcode & 0x0F00) >> 8;
+			Uint8 register_index_y = (chip->opcode & 0x00F0) >> 4;
 
 			if (chip->V[register_index_y] > chip->V[register_index_x])
 				chip->V[0xF] = 0; // There is a borrow
@@ -232,21 +235,21 @@ void x_8(Chip8* chip)
 
 			chip->V[register_index_x] -= chip->V[register_index_y];
 
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		case 0x0006: { // 0x8XY6: Shifts VX right by one. VF is set to the value of the least significant bit of VX before the shift
-			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
+			Uint8 register_index_x = (chip->opcode & 0x0F00) >> 8;
 
 			chip->V[0xF] = chip->V[register_index_x] & 0x1;
 			chip->V[register_index_x] >>= 1;
 
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		case 0x0007: { // 0x8XY7: Sets VX to VY minus VX. VF is set to 0 when there's a borrow, and 1 when there isn't
-			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
-			unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
+			Uint8 register_index_x = (chip->opcode & 0x0F00) >> 8;
+			Uint8 register_index_y = (chip->opcode & 0x00F0) >> 4;
 
 			if (chip->V[register_index_x] > chip->V[register_index_y])
 				chip->V[0xF] = 0; // There is a borrow
@@ -255,16 +258,16 @@ void x_8(Chip8* chip)
 
 			chip->V[register_index_x] = chip->V[register_index_y] - chip->V[register_index_x];
 
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		case 0x000E: { // 0x8XYE: Shifts VX left by one. VF is set to the value of the most significant bit of VX before the shift
-			unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
+			Uint8 register_index_x = (chip->opcode & 0x0F00) >> 8;
 
 			chip->V[0xF] = chip->V[register_index_x] >> 7;
 			chip->V[register_index_x] <<= 1;
 
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		default:
@@ -275,27 +278,27 @@ void x_8(Chip8* chip)
 void x_9(Chip8* chip)
 {
 	// 0x9XY0: Skips the next instruction if VX doesn't equal VY
-	unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
-	unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
+	Uint8 register_index_x = (chip->opcode & 0x0F00) >> 8;
+	Uint8 register_index_y = (chip->opcode & 0x00F0) >> 4;
 	if (chip->V[register_index_x] != chip->V[register_index_y])
-		chip->program_counter += 4;
+		skip_next_opcode(chip);
 	else
-		chip->program_counter += 2;
+		next_opcode(chip);
 }
 
 void x_a(Chip8* chip)
 {
 	// ANNN: Sets I to the address NNN
-	unsigned short nnn = chip->opcode & 0x0FFF;
+	Uint16 nnn = chip->opcode & 0x0FFF;
 	chip->I = nnn;
-	chip->program_counter += 2;
+	next_opcode(chip);
 }
 
 void x_b(Chip8* chip)
 {
 	// BNNN: Jumps to the address NNN plus V0
 	// We don't need to increment the program counter here since where jumping to a specified address
-	unsigned short nnn = chip->opcode & 0x0FFF;
+	Uint16 nnn = chip->opcode & 0x0FFF;
 	chip->program_counter = nnn + chip->V[0];
 }
 
@@ -305,12 +308,12 @@ void x_c(Chip8* chip)
 	// Seed the rand() function
 	srand(time(NULL));
 	// Get a random value between 0 and 255
-	unsigned char random_value = rand() % 0xFF;
-	unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
-	unsigned char nn = chip->opcode & 0x00FF;
+	Uint8 random_value = rand() % 0xFF;
+	Uint8 register_index = (chip->opcode & 0x0F00) >> 8;
+	Uint8 nn = chip->opcode & 0x00FF;
 	chip->V[register_index] = random_value & nn;
 
-	chip->program_counter += 2;
+	next_opcode(chip);
 }
 
 void x_d(Chip8* chip)
@@ -323,12 +326,12 @@ void x_d(Chip8* chip)
 
 	// Credit: http://www.multigesture.net/wp-content/uploads/mirror/goldroad/chip8.shtml
 
-	unsigned char register_index_x = (chip->opcode & 0x0F00) >> 8;
-	unsigned char register_index_y = (chip->opcode & 0x00F0) >> 4;
-	unsigned short x = chip->V[register_index_x];
-	unsigned short y = chip->V[register_index_y];
-	unsigned short height = chip->opcode & 0x000F;
-	unsigned short pixel;
+	Uint8 register_index_x = (chip->opcode & 0x0F00) >> 8;
+	Uint8 register_index_y = (chip->opcode & 0x00F0) >> 4;
+	Uint16 x = chip->V[register_index_x];
+	Uint16 y = chip->V[register_index_y];
+	Uint16 height = chip->opcode & 0x000F;
+	Uint16 pixel;
 
 	chip->V[0xF] = 0;
 	for (int yline = 0; yline < height; yline++)
@@ -348,7 +351,7 @@ void x_d(Chip8* chip)
 	}
 
 	chip->redraw = 1;
-	chip->program_counter += 2;
+	next_opcode(chip);
 }
 
 void x_e(Chip8* chip)
@@ -356,21 +359,21 @@ void x_e(Chip8* chip)
 	switch (chip->opcode & 0x00FF)
 	{
 		case 0x009E: { // EX9E: Skips the next instruction if the key stored in VX is pressed
-			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
-			unsigned char register_value = chip->V[register_index];
+			Uint8 register_index = (chip->opcode & 0x0F00) >> 8;
+			Uint8 register_value = chip->V[register_index];
 			if (chip->key_state[register_value] != 0)
-				chip->program_counter += 4;
+				skip_next_opcode(chip);
 			else
-				chip->program_counter += 2;
+				next_opcode(chip);
 			break;
 		}
 		case 0x00A1: { // EXA1: Skips the next instruction if the key stored in VX isn't pressed
-			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
-			unsigned char register_value = chip->V[register_index];
+			Uint8 register_index = (chip->opcode & 0x0F00) >> 8;
+			Uint8 register_value = chip->V[register_index];
 			if (chip->key_state[register_value] == 0)
-				chip->program_counter += 4;
+				skip_next_opcode(chip);
 			else
-				chip->program_counter += 2;
+				next_opcode(chip);
 			break;
 		}
 		default:
@@ -383,18 +386,18 @@ void x_f(Chip8* chip)
 	switch (chip->opcode & 0x00FF)
 	{
 		case 0x0007: { // FX07: Sets VX to the value of the delay timer
-			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+			Uint8 register_index = (chip->opcode & 0x0F00) >> 8;
 			chip->V[register_index] = chip->delay_timer;
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		case 0x000A: { // FX0A: A key press is awaited, and then stored in VX		
-			unsigned char key_was_pressed = 0;
-			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+			Uint8 key_was_pressed = 0;
+			Uint8 register_index = (chip->opcode & 0x0F00) >> 8;
 
 			while (1)
 			{
-				for (unsigned char i = 0; i < 16; i++)
+				for (Uint8 i = 0; i < 16; i++)
 				{
 					if (chip->key_state[i] != 0)
 					{
@@ -407,23 +410,23 @@ void x_f(Chip8* chip)
 					break;
 			}
 			
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		case 0x0015: { // FX15: Sets the delay timer to VX
-			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+			Uint8 register_index = (chip->opcode & 0x0F00) >> 8;
 			chip->delay_timer = chip->V[register_index];
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		case 0x0018: { // FX18: Sets the sound timer to VX
-			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+			Uint8 register_index = (chip->opcode & 0x0F00) >> 8;
 			chip->sound_timer = chip->V[register_index];
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		case 0x001E: { // FX1E: Adds VX to I
-			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+			Uint8 register_index = (chip->opcode & 0x0F00) >> 8;
 			// VF is set to 1 when range overflow(I + VX > 0xFFF), and 0 when there isn't.
 			// This is undocumented feature of the CHIP-8 and used by Spacefight 2091! game.
 			if (chip->I + chip->V[register_index] > 0xFFF)	
@@ -432,47 +435,47 @@ void x_f(Chip8* chip)
 				chip->V[0xF] = 0;
 
 			chip->I += chip->V[register_index];
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		case 0x0029: { // FX29: Sets I to the location of the sprite for the character in VX. Characters 0-F (in hexadecimal) are represented by a 4x5 font
-			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+			Uint8 register_index = (chip->opcode & 0x0F00) >> 8;
 			chip->I = chip->V[register_index] * 5;
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		case 0x0033: { // FX33: Stores the Binary-coded decimal representation of VX at the addresses I, I plus 1, and I plus 2
 			// Credit: http://www.multigesture.net/wp-content/uploads/mirror/goldroad/chip8.shtml
-			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
+			Uint8 register_index = (chip->opcode & 0x0F00) >> 8;
 
 			chip->memory[chip->I] = chip->V[register_index] / 100;
 			chip->memory[chip->I + 1] = (chip->V[register_index] / 10) % 10;
 			chip->memory[chip->I + 2] = (chip->V[register_index] % 100) % 10;
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		case 0x0055: { // FX55: Stores V0 to VX in memory starting at address I					
-			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
-			for (unsigned char i = 0; i <= register_index; i++)
+			Uint8 register_index = (chip->opcode & 0x0F00) >> 8;
+			for (Uint8 i = 0; i <= register_index; i++)
 				chip->memory[chip->I + i] = chip->V[i];
 
 			// On the original interpreter, when the operation is done, I = I + X + 1. On current implementations, I is left unchanged.
 			// Include this?
 			//chip->I += register_index + 1;
 
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		case 0x0065: { // FX65: Fills V0 to VX with values from memory starting at address I
-			unsigned char register_index = (chip->opcode & 0x0F00) >> 8;
-			for (unsigned char i = 0; i <= register_index; i++)
+			Uint8 register_index = (chip->opcode & 0x0F00) >> 8;
+			for (Uint8 i = 0; i <= register_index; i++)
 				chip->V[i] = chip->memory[chip->I + i];
 
 			// On the original interpreter, when the operation is done, I = I + X + 1. On current implementations, I is left unchanged.
 			// Include this?
 			//chip->I += register_index + 1;
 
-			chip->program_counter += 2;
+			next_opcode(chip);
 			break;
 		}
 		default:
@@ -528,6 +531,16 @@ Chip8* create_chip()
 void destroy_chip(Chip8* chip)
 {
 	free(chip);
+}
+
+void next_opcode(Chip8* chip)
+{
+	chip->program_counter += 2;
+}
+
+void skip_next_opcode(Chip8* chip)
+{
+	chip->program_counter += 4;
 }
 
 void handle_event(SDL_Event e, Chip8* chip)

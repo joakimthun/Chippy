@@ -4,21 +4,21 @@
 #include <SDL.h>
 
 typedef struct {
-	unsigned char display_buffer[64 * 32];	// W * H, 2048 pixels
-	unsigned char key_state[16];			// 16 keys which range from 0 to F
+	Uint8 display_buffer[64 * 32];	// W * H, 2048 pixels
+	Uint8 key_state[16];			// 16 keys which range from 0 to F
 											
-	unsigned short program_counter;			// Program counter
-	unsigned short opcode;					// Current opcode
-	unsigned short I;						// Address register
-	unsigned short stack_pointer;			// Stack pointer
+	Uint16 program_counter;			// Program counter
+	Uint16 opcode;					// Current opcode
+	Uint16 I;						// Address register
+	Uint16 stack_pointer;			// Stack pointer
 											
-	unsigned char V[16];					// 16 8-bit registers, V0 to VF
-	unsigned short stack[16];				
-	unsigned char memory[4096];			
+	Uint8 V[16];					// 16 8-bit registers, V0 to VF
+	Uint16 stack[16];
+	Uint8 memory[4096];			
 											
-	unsigned char delay_timer;				// Delay timer
-	unsigned char sound_timer;				// Sound timer
-	unsigned char redraw;
+	Uint8 delay_timer;				// Delay timer
+	Uint8 sound_timer;				// Sound timer
+	Uint8 redraw;
 
 } Chip8;					
 
