@@ -5,7 +5,7 @@
 
 typedef struct {
 	Uint8 display_buffer[64 * 32];	// W * H, 2048 pixels
-	Uint8 key_state[16];			// 16 keys which range from 0 to F
+	Uint8 key_state[16];			// 16 keys, 0 to F
 											
 	Uint16 program_counter;			// Program counter
 	Uint16 opcode;					// Current opcode

@@ -8,6 +8,8 @@
 void fetch_opcode(Chip8*);
 void next_opcode(Chip8* chip);
 void skip_next_opcode(Chip8* chip);
+void stack_push(Chip8* chip);
+void stack_pop(Chip8* chip);
 void x_0(Chip8*);
 void x_1(Chip8*);
 void x_2(Chip8*);
@@ -68,9 +70,6 @@ void emulate(Chip8* chip)
 	// Update the sound and delay timer
 	if (chip->sound_timer > 0)
 	{
-		if (chip->sound_timer == 1)
-			// Play a sound
-
 		chip->sound_timer--;
 	}
 
@@ -91,11 +90,7 @@ void x_0(Chip8* chip)
 			break;
 
 		case 0x000E: // 0x00EE: Returns from subroutine
-			if (chip->stack_pointer == 0)
-				printf("Stack underflow!");
-
-			chip->stack_pointer--;
-			chip->program_counter = chip->stack[chip->stack_pointer];	// Set the address on the stack as the program counter					
+			stack_pop(chip);
 			next_opcode(chip);
 			break;
 
@@ -114,8 +109,7 @@ void x_1(Chip8* chip)
 void x_2(Chip8* chip)
 {
 	// 0x2NNN: Calls subroutine at NNN
-	chip->stack[chip->stack_pointer] = chip->program_counter;	// Pu the current address on the stack
-	chip->stack_pointer++;										// Increment the stack pointer
+	stack_push(chip);
 	chip->program_counter = chip->opcode & 0x0FFF;				// Set the program counter to the address at NNN
 }
 
@@ -395,20 +389,17 @@ void x_f(Chip8* chip)
 			Uint8 key_was_pressed = 0;
 			Uint8 register_index = (chip->opcode & 0x0F00) >> 8;
 
-			while (1)
+			for (Uint8 i = 0; i < 16; i++)
 			{
-				for (Uint8 i = 0; i < 16; i++)
+				if (chip->key_state[i] != 0)
 				{
-					if (chip->key_state[i] != 0)
-					{
-						chip->V[register_index] = i;
-						key_was_pressed = 1;
-					}
+					chip->V[register_index] = i;
+					key_was_pressed = 1;
 				}
-
-				if (key_was_pressed != 0)
-					break;
 			}
+
+			if (key_was_pressed == 0)
+				break;
 			
 			next_opcode(chip);
 			break;
@@ -487,12 +478,31 @@ void fetch_opcode(Chip8* chip)
 {
 	// Each opcode is 2 bytes long so we need to grab them from the memory byte by byte and then merge them together
 	chip->opcode = chip->memory[chip->program_counter] << 8 | chip->memory[chip->program_counter + 1];
-	printf("Opcode: 0x%X\n", chip->opcode);
+
+	//printf("Opcode: 0x%X\n", chip->opcode);
+}
+
+void stack_push(Chip8* chip)
+{
+	if (chip->stack_pointer == 15)
+		printf("Stack overflow!");
+
+	chip->stack[chip->stack_pointer] = chip->program_counter;	// Pu the current address on the stack
+	chip->stack_pointer++;										// Increment the stack pointer
+}
+
+void stack_pop(Chip8* chip)
+{
+	if (chip->stack_pointer == 0)
+		printf("Stack underflow!");
+
+	chip->stack_pointer--;
+	chip->program_counter = chip->stack[chip->stack_pointer];	// Set the address on the stack as the program counter
 }
 
 Chip8* create_chip()
 {
-	Chip8* chip = malloc(sizeof(Chip8));
+	Chip8* chip = (Chip8*)malloc(sizeof(Chip8));
 	if (chip == NULL)
 	{
 		printf("Could not create chip :(");
@@ -586,16 +596,16 @@ void handle_event(SDL_Event e, Chip8* chip)
 			case SDLK_r:
 				chip->key_state[11] = 1;
 				break;
-			case SDLK_s:
+			case SDLK_t:
 				chip->key_state[12] = 1;
 				break;
-			case SDLK_t:
+			case SDLK_y:
 				chip->key_state[13] = 1;
 				break;
 			case SDLK_u:
 				chip->key_state[14] = 1;
 				break;
-			case SDLK_y:
+			case SDLK_i:
 				chip->key_state[15] = 1;
 				break;
 			default:
@@ -644,16 +654,16 @@ void handle_event(SDL_Event e, Chip8* chip)
 			case SDLK_r:
 				chip->key_state[11] = 0;
 				break;
-			case SDLK_s:
+			case SDLK_t:
 				chip->key_state[12] = 0;
 				break;
-			case SDLK_t:
+			case SDLK_y:
 				chip->key_state[13] = 0;
 				break;
 			case SDLK_u:
 				chip->key_state[14] = 0;
 				break;
-			case SDLK_y:
+			case SDLK_i:
 				chip->key_state[15] = 0;
 				break;
 			default:

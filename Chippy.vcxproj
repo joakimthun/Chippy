@@ -42,6 +42,10 @@
     <IncludePath>C:\Dev\Chippy\lib\sdl\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Dev\Chippy\lib\sdl;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>C:\Dev\Chippy\lib\sdl\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Dev\Chippy\lib\sdl;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -63,16 +67,20 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\chip8.c" />
     <ClCompile Include="src\chippy.c" />
+    <ClCompile Include="src\timer.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="lib\sdl\include\begin_code.h" />
@@ -140,6 +148,7 @@
     <ClInclude Include="lib\sdl\include\SDL_version.h" />
     <ClInclude Include="lib\sdl\include\SDL_video.h" />
     <ClInclude Include="src\chip8.h" />
+    <ClInclude Include="src\timer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitattributes" />
