@@ -3,32 +3,17 @@
 #include <math.h>
 
 #include "chip8.h"
-#include "timer.h"
 
 // Function prototypes
 int initialize_sdl(int screen_width, int screen_height);
 void destroy_sdl();
 void render(Chip8* chip);
 void put_pixel(int x, int y, Uint32 pixel);
-void audio_callback(void *userdata, Uint8 *stream, int len);
 void debug_keys(Chip8* chip);
 
 SDL_Window* window = NULL;
 SDL_Surface* window_surface = NULL;
 SDL_Surface* render_surface = NULL;
-
-// Length of the audio file
-Uint32 wav_length = 0;
-// Audio file buffer
-Uint8 *wav_buffer = NULL;
-// Audio file spec
-SDL_AudioSpec wav_spec = { 0 };
-// Audio file
-char* audio_file = "beep.wav";
-// Current position in the audio buffer
-Uint8* audio_position;
-// Remaining audio length
-Uint32 audio_length; 
 
 int resolution_scale = 10;
 
@@ -54,11 +39,12 @@ int main(int argc, char* argv[])
 
 	SDL_Event e;
 	Uint8 running = 1;
-	Timer* timer = create_timer();
+	Uint32 start_ticks = 0;
 
 	while (running > 0)
 	{
-		set_ticks(timer);
+		//set_ticks(timer);
+		start_ticks = SDL_GetTicks();
 
 		// Handle the events in the event queue
 		while (SDL_PollEvent(&e) != 0)
@@ -89,17 +75,16 @@ int main(int argc, char* argv[])
 			SDL_UpdateWindowSurface(window);
 		}
 
-		Uint32 ticks = get_ticks(timer);
+		Uint32 ticks = SDL_GetTicks() - start_ticks;
 		
 		Uint32 sleep_time = 8 - ticks;
 
 		if (sleep_time < 16)
 			SDL_Delay(sleep_time);
 
-		// printf("Ticks: %d \n", sleep_time);
+		 printf("Ticks: %d \n", sleep_time);
 	}
 
-	destroy_timer(timer);
 	destroy_chip(chip);
 	destroy_sdl();
 	
@@ -208,47 +193,11 @@ int initialize_sdl(int screen_width, int screen_height)
 		return 1;
 	}
 
-	//if (SDL_LoadWAV(audio_file, &wav_spec, &wav_buffer, &wav_length) == NULL)
-	//{
-	//	printf("Could not load %s! SDL_Error: %s\n", audio_file, SDL_GetError());
-	//	return 1;
-	//}
-	//
-	//wav_spec.callback = audio_callback;
-	//wav_spec.userdata = NULL;
-	//
-	//// Copy the sound buffer
-	//audio_position = wav_buffer;
-	//// Copy the file length
-	//audio_length = wav_length;
-	//
-	//// Open the audio device
-	//if (SDL_OpenAudio(&wav_spec, NULL) < 0)
-	//{
-	//	printf("Couldn't open the audio: %s\n", SDL_GetError());
-	//	return 1;
-	//}
-
 	return 0;
-}
-
-void audio_callback(void *userdata, Uint8 *stream, int len) {
-
-	if (audio_length == 0)
-		return;
-
-	len = len > audio_length ? audio_length : len;
-
-	SDL_MixAudio(stream, audio_position, len, SDL_MIX_MAXVOLUME);
-
-	audio_position += len;
-	audio_length -= len;
 }
 
 void destroy_sdl()
 {
-	//SDL_CloseAudio();
-	//SDL_FreeWAV(wav_buffer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 }

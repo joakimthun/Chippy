@@ -80,7 +80,6 @@
   <ItemGroup>
     <ClCompile Include="src\chip8.c" />
     <ClCompile Include="src\chippy.c" />
-    <ClCompile Include="src\timer.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="lib\sdl\include\begin_code.h" />
@@ -148,7 +147,6 @@
     <ClInclude Include="lib\sdl\include\SDL_version.h" />
     <ClInclude Include="lib\sdl\include\SDL_video.h" />
     <ClInclude Include="src\chip8.h" />
-    <ClInclude Include="src\timer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitattributes" />
