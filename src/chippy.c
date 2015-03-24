@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
 
 		if (chip->sound_timer == 1)
 		{
-			printf("A beep should have been played! \n");
+			printf("Awesome sound effect! \n");
 		}
 
 		if (chip->redraw > 0)
@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
 		if (sleep_time < 16)
 			SDL_Delay(sleep_time);
 
-		 printf("Ticks: %d \n", sleep_time);
+		 // printf("Ticks: %d \n", sleep_time);
 	}
 
 	destroy_chip(chip);
